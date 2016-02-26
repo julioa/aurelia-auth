@@ -87,7 +87,9 @@ System.register(['aurelia-dependency-injection', './authUtils', './storage', './
             var data = authUtils.extend({}, userData, {
               code: oauthData.code,
               clientId: current.clientId,
-              redirectUri: current.redirectUri
+              clientSecret: current.clientSecret,
+              redirect_uri: current.redirectUri,
+              grant_type: 'authorization_code'
             });
 
             if (oauthData.state) {
@@ -101,9 +103,37 @@ System.register(['aurelia-dependency-injection', './authUtils', './storage', './
             var exchangeForTokenUrl = this.config.baseUrl ? authUtils.joinUrl(this.config.baseUrl, current.url) : current.url;
             var credentials = this.config.withCredentials ? 'include' : 'same-origin';
 
+            var myHeaders = new Headers();
+            if (data.clientId && data.clientSecret) {
+              myHeaders.append('Authorization', 'Basic ' + btoa(data.clientId + ':' + data.clientSecret));
+              delete data.clientId;
+              delete data.clientSecret;
+            }
+            myHeaders.append('Content-type', 'application/x-www-form-urlencoded');
+
+            var mode = "text";
+            var formData = undefined;
+            if (mode === "text") {
+              formData = "";
+              for (var key in data) {
+                if (formData) {
+                  formData += '&';
+                }
+                formData += key + '=' + data[key];
+              }
+            } else if (mode === "form") {
+              formData = new FormData();
+              for (var key in data) {
+                formData.append(key, data[key]);
+              }
+            } else {
+              formData = json(data);
+            }
+
             return this.http.fetch(exchangeForTokenUrl, {
               method: 'post',
-              body: json(data),
+              headers: myHeaders,
+              body: formData,
               credentials: credentials
             }).then(authUtils.status).then(function (response) {
               return response;

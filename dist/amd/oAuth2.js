@@ -77,7 +77,9 @@ define(['exports', 'aurelia-dependency-injection', './authUtils', './storage', '
         var data = _authUtils2['default'].extend({}, userData, {
           code: oauthData.code,
           clientId: current.clientId,
-          redirectUri: current.redirectUri
+          clientSecret: current.clientSecret,
+          redirect_uri: current.redirectUri,
+          grant_type: 'authorization_code'
         });
 
         if (oauthData.state) {
@@ -91,9 +93,37 @@ define(['exports', 'aurelia-dependency-injection', './authUtils', './storage', '
         var exchangeForTokenUrl = this.config.baseUrl ? _authUtils2['default'].joinUrl(this.config.baseUrl, current.url) : current.url;
         var credentials = this.config.withCredentials ? 'include' : 'same-origin';
 
+        var myHeaders = new Headers();
+        if (data.clientId && data.clientSecret) {
+          myHeaders.append('Authorization', 'Basic ' + btoa(data.clientId + ':' + data.clientSecret));
+          delete data.clientId;
+          delete data.clientSecret;
+        }
+        myHeaders.append('Content-type', 'application/x-www-form-urlencoded');
+
+        var mode = "text";
+        var formData = undefined;
+        if (mode === "text") {
+          formData = "";
+          for (var key in data) {
+            if (formData) {
+              formData += '&';
+            }
+            formData += key + '=' + data[key];
+          }
+        } else if (mode === "form") {
+          formData = new FormData();
+          for (var key in data) {
+            formData.append(key, data[key]);
+          }
+        } else {
+          formData = (0, _aureliaFetchClient.json)(data);
+        }
+
         return this.http.fetch(exchangeForTokenUrl, {
           method: 'post',
-          body: (0, _aureliaFetchClient.json)(data),
+          headers: myHeaders,
+          body: formData,
           credentials: credentials
         }).then(_authUtils2['default'].status).then(function (response) {
           return response;
