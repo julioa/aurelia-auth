@@ -85,9 +85,11 @@ export class OAuth2 {
       delete data.clientId;
       delete data.clientSecret;
     }
-    myHeaders.append('Content-type', 'application/x-www-form-urlencoded');
+    if (current.tokenContentType) {
+      myHeaders.append('Content-type', current.tokenContentType);
+    }
 
-    let mode = "text";
+    let mode = current.tokenBodyFormat;
     let formData;
     if (mode === "text") {
       formData = "";
@@ -108,7 +110,7 @@ export class OAuth2 {
 
     return this.http.fetch(exchangeForTokenUrl, {
       method: 'post',
-      headers: myHeaders,      
+      headers: myHeaders,
       body: formData,
       credentials: credentials
     })

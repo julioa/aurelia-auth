@@ -109,9 +109,11 @@ System.register(['aurelia-dependency-injection', './authUtils', './storage', './
               delete data.clientId;
               delete data.clientSecret;
             }
-            myHeaders.append('Content-type', 'application/x-www-form-urlencoded');
+            if (current.tokenContentType) {
+              myHeaders.append('Content-type', current.tokenContentType);
+            }
 
-            var mode = "text";
+            var mode = current.tokenBodyFormat;
             var formData = undefined;
             if (mode === "text") {
               formData = "";
